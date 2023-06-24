@@ -1,0 +1,45 @@
+const jwt = require('jsonwebtoken');
+const User = require('../model/User');
+
+const requireAuth = (req, res, next) => {
+  console.log('requireAuth middleware executed');
+  const token = req.headers.authorization;
+  if (!token) {
+    return res.status(401).json({ error: 'Token required' });
+  }
+  const accessToken = token.split(' ')[1]; // Extract the token from the "Bearer <token>" format
+  jwt.verify(accessToken, process.env.JWT_SECRET, (err, decodedToken) => {
+    if (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ error: 'Token expired' });
+      } else {
+        return res.status(401).json({ error: 'Invalid token' });
+      }
+    }
+    User.findById(decodedToken.id)
+      .then((user) => {
+        if (!user) {
+          return res.status(401).json({ error: 'User not found' });
+        }
+        req.user = user;
+        next();
+      })
+      .catch((err) => {
+        return res.status(401).json({ error: 'User not found' });
+      });
+  });
+};
+
+const requireRole = (role) => {
+  return (req, res, next) => {
+    console.log('requireRole middleware executed');
+    console.log('User role:', req.user.role);
+    if (req.user && req.user.role === role) {
+      next();
+    } else {
+      res.status(403).json({ error: 'Unauthorized' });
+    }
+  };
+};
+
+module.exports = { requireAuth, requireRole };
