@@ -1,4 +1,4 @@
-const Book = require('../model/book');
+const Book = require('../model/Book');
 
 const getBooks = async (req, res) => {
   try {
@@ -12,6 +12,9 @@ const getBooks = async (req, res) => {
 const createBook = async (req, res) => {
   try {
     const { title, author } = req.body;
+    console.log(title, author);
+    const token = req.headers.cookie;
+    // console.log(token);
     const book = new Book({ title, author });
     await book.save();
     res.status(201).json(book);
